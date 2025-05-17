@@ -18,10 +18,24 @@ export const ResetPassword: React.FC = () => {
 
   // Check if we have a hash in the URL which indicates a password reset
   useEffect(() => {
+    // Debug: Log the full URL and hash
+    console.log('Current URL:', window.location.href);
+    console.log('URL hash:', window.location.hash);
+    
     const hash = window.location.hash;
-    if (!hash || !hash.includes('type=recovery')) {
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // Supabase might use either hash or query parameters
+    const hasRecoveryToken = 
+      hash.includes('type=recovery') || 
+      searchParams.get('type') === 'recovery';
+    
+    if (!hasRecoveryToken) {
+      console.log('No recovery token found in URL, redirecting to login');
       // No valid recovery token found, redirect to login
       navigate('/auth');
+    } else {
+      console.log('Recovery token found in URL');
     }
   }, [navigate]);
 
@@ -51,13 +65,17 @@ export const ResetPassword: React.FC = () => {
 
     setIsLoading(true);
     try {
+      console.log('Attempting to update password');
+      
       // Update the user's password
       const { error } = await updatePassword(password);
 
       if (error) {
+        console.error('Password update error:', error);
         toast.error(error.message || 'Failed to reset password');
         setError(error.message || 'Failed to reset password');
       } else {
+        console.log('Password updated successfully');
         setIsSuccess(true);
         toast.success('Password reset successfully');
         // Redirect to login after a short delay
@@ -66,6 +84,7 @@ export const ResetPassword: React.FC = () => {
         }, 3000);
       }
     } catch (error: any) {
+      console.error('Unexpected error during password update:', error);
       toast.error(error.message || 'An unexpected error occurred');
       setError(error.message || 'An unexpected error occurred');
     } finally {

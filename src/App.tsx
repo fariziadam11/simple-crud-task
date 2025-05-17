@@ -418,7 +418,9 @@ function AppRoutes() {
       <Route path="/auth" element={
         user ? <Navigate to="/" replace /> : <AuthLayout />
       } />
+      {/* Pastikan halaman reset password dapat diakses tanpa autentikasi */}
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/reset-password/*" element={<ResetPassword />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

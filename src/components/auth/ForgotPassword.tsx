@@ -12,6 +12,9 @@ export const ForgotPassword: React.FC<{ onBackToLogin: () => void }> = ({ onBack
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  
+  // Untuk debugging
+  console.log('ForgotPassword rendered, isSubmitted:', isSubmitted);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +40,11 @@ export const ForgotPassword: React.FC<{ onBackToLogin: () => void }> = ({ onBack
       } else {
         // Tampilkan pesan sukses dan atur state
         toast.success('Password reset email sent successfully');
-        setIsSubmitted(true);
+        // Gunakan callback function untuk memastikan state diperbarui
+        setIsSubmitted(() => {
+          console.log('Setting isSubmitted to true');
+          return true;
+        });
       }
     } catch (error) {
       console.error('Unexpected error:', error);

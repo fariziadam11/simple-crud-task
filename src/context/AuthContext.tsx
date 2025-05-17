@@ -92,20 +92,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     setLoading(true);
+    // Pastikan URL redirect lengkap dan benar
+    const redirectUrl = `${window.location.origin}/reset-password`;
+    console.log('Reset password redirect URL:', redirectUrl);
+    
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: redirectUrl,
     });
+    
+    if (error) {
+      console.error('Reset password error:', error);
+    } else {
+      console.log('Reset password email sent successfully');
+    }
+    
     setLoading(false);
     return { data, error };
   };
   
   const updatePassword = async (newPassword: string) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-    setLoading(false);
-    return { data, error };
+    try {
+      console.log('Updating password...');
+      
+      // Debugging info
+      console.log('URL for password reset:', window.location.href);
+      
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        console.error('Error updating password:', error);
+      } else {
+        console.log('Password updated successfully:', data);
+      }
+      
+      setLoading(false);
+      return { data, error };
+    } catch (err) {
+      console.error('Unexpected error in updatePassword:', err);
+      setLoading(false);
+      return { data: null, error: err as any };
+    }
   };
 
   const deleteAccount = async () => {
