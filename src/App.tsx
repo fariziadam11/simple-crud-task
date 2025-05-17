@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast, Toaster } from 'react-hot-toast';
-import { Plus, Moon, Sun, LayoutDashboard, Kanban, List, User } from 'lucide-react';
+import { Plus, Moon, Sun, LayoutDashboard, Kanban, List, User, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Task, TaskFormData } from './types';
@@ -38,6 +38,14 @@ const AppContent = () => {
   
   // View mode state (list, board, dashboard, profile)
   const [viewMode, setViewMode] = useState<'list' | 'board' | 'dashboard' | 'profile'>('board');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  
+  // Close mobile menu when view mode changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [viewMode]);
 
   // Load tasks when user changes
   useEffect(() => {
@@ -217,16 +225,27 @@ const AppContent = () => {
       <header className="shadow transition-colors duration-200 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
-            <motion.h1 
-              className="text-2xl font-bold text-gray-900 dark:text-white"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Task Manager
-            </motion.h1>
+            <div className="flex w-full sm:w-auto justify-between items-center">
+              <motion.h1 
+                className="text-2xl font-bold text-gray-900 dark:text-white"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                Task Manager
+              </motion.h1>
+              
+              {/* Mobile Menu Button */}
+              <button 
+                className="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                onClick={toggleMobileMenu}
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+            
             <div className="flex items-center space-x-2">
-              {/* View Mode Toggles */}
+              {/* Desktop View Mode Toggles */}
               <div className="hidden sm:flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg mr-4">
                 <button
                   onClick={() => setViewMode('list')}
@@ -290,6 +309,68 @@ const AppContent = () => {
           </div>
         </div>
       </header>
+      
+      {/* Mobile Navigation Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            className="fixed inset-0 z-50 sm:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={toggleMobileMenu}></div>
+            <motion.div 
+              className="absolute right-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              <div className="p-4 space-y-4">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium">Menu</h3>
+                  <button onClick={toggleMobileMenu} className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center w-full p-3 rounded-md ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <List size={20} className="mr-3" />
+                    <span>List View</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('board')}
+                    className={`flex items-center w-full p-3 rounded-md ${viewMode === 'board' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <Kanban size={20} className="mr-3" />
+                    <span>Board View</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('dashboard')}
+                    className={`flex items-center w-full p-3 rounded-md ${viewMode === 'dashboard' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <LayoutDashboard size={20} className="mr-3" />
+                    <span>Dashboard</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('profile')}
+                    className={`flex items-center w-full p-3 rounded-md ${viewMode === 'profile' ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <User size={20} className="mr-3" />
+                    <span>Profile</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {viewMode !== 'profile' && (

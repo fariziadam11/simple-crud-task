@@ -1,5 +1,7 @@
 import React from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { DroppableWrapper } from './dnd/DroppableWrapper';
+import { DraggableWrapper } from './dnd/DraggableWrapper';
 import { Task, TaskStatus } from '../types';
 import { TaskItem } from './TaskItem';
 import { motion } from 'framer-motion';
@@ -131,7 +133,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
               </span>
             </h3>
             
-            <Droppable droppableId={status}>
+            <DroppableWrapper droppableId={status}>
               {(provided: any, snapshot: any) => (
                 <div
                   {...provided.droppableProps}
@@ -146,7 +148,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                     </div>
                   ) : (
                     tasksByStatus[status as keyof typeof tasksByStatus].map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
+                      <DraggableWrapper key={task.id} draggableId={task.id} index={index}>
                         {(provided: any, snapshot: any) => (
                           <div
                             ref={provided.innerRef}
@@ -164,13 +166,13 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
                             />
                           </div>
                         )}
-                      </Draggable>
+                      </DraggableWrapper>
                     ))
                   )}
                   {provided.placeholder}
                 </div>
               )}
-            </Droppable>
+            </DroppableWrapper>
           </motion.div>
         ))}
       </div>
