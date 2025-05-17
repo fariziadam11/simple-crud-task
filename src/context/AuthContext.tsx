@@ -18,6 +18,10 @@ interface AuthContextType {
     error: any | null;
     data: any | null;
   }>;
+  updatePassword: (newPassword: string) => Promise<{
+    error: any | null;
+    data: any | null;
+  }>;
   deleteAccount: () => Promise<{
     error: any | null;
     success: boolean;
@@ -94,6 +98,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
     return { data, error };
   };
+  
+  const updatePassword = async (newPassword: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    setLoading(false);
+    return { data, error };
+  };
 
   const deleteAccount = async () => {
     if (!user) {
@@ -159,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     deleteAccount,
     loading,
   };

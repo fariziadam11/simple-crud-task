@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast, Toaster } from 'react-hot-toast';
 import { Plus, Moon, Sun, LayoutDashboard, Kanban, List, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Task, TaskFormData } from './types';
 import { fetchTasks, createTask, updateTask, deleteTask } from './services/taskService';
 import { TaskFilter } from './components/TaskFilter';
@@ -16,6 +17,8 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { UserProfile } from './components/auth/UserProfile';
+import { AuthLayout } from './components/auth/AuthLayout';
+import { ResetPassword } from './components/auth/ResetPassword';
 
 const AppContent = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -399,9 +402,18 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
+        <Router>
+          <Routes>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <AppContent />
+              </ProtectedRoute>
+            } />
+            <Route path="/auth" element={<AuthLayout />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
       </ThemeProvider>
     </AuthProvider>
   );
