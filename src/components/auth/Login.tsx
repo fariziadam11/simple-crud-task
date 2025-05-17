@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { motion } from 'framer-motion';
@@ -13,6 +14,7 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onToggleForm, onForgotPassword }) => {
   const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -54,6 +56,8 @@ export const Login: React.FC<LoginProps> = ({ onToggleForm, onForgotPassword }) 
         toast.error(error.message || 'Failed to sign in');
       } else {
         toast.success('Signed in successfully');
+        // Navigate to the main app after successful login
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.message || 'An unexpected error occurred');

@@ -5,10 +5,8 @@ import { Button } from '../ui/Button';
 import { Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 
 export const ForgotPassword: React.FC<{ onBackToLogin: () => void }> = ({ onBackToLogin }) => {
-  const navigate = useNavigate();
   const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -35,6 +33,9 @@ export const ForgotPassword: React.FC<{ onBackToLogin: () => void }> = ({ onBack
       
       // Store the email in sessionStorage for potential use in the reset password page
       sessionStorage.setItem('resetEmail', email);
+      
+      // Note: We don't navigate here because Supabase will send an email with a magic link
+      // The user will click that link which will take them to the reset-password route
       if (error) {
         toast.error(error.message || 'Failed to send password reset email');
         setError(error.message || 'Failed to send password reset email');

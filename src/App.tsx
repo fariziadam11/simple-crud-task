@@ -13,16 +13,15 @@ import { TaskForm } from './components/TaskForm';
 import { Modal } from './components/ui/Modal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Button } from './components/ui/Button';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { UserProfile } from './components/auth/UserProfile';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthLayout } from './components/auth/AuthLayout';
 import { ResetPassword } from './components/auth/ResetPassword';
+import { UserProfile } from './components/auth/UserProfile';
 
 const AppContent = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -398,21 +397,39 @@ const AppContent = () => {
   );
 };
 
+function AppRoutes() {
+  const { user, loading } = useAuth();
+
+  // Show loading spinner while checking auth status
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
+        <span className="sr-only">Loading...</span>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={
+        user ? <AppContent /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/auth" element={
+        user ? <Navigate to="/" replace /> : <AuthLayout />
+      } />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
         <Router>
-          <Routes>
-            <Route path="/" element={
-              <ProtectedRoute>
-                <AppContent />
-              </ProtectedRoute>
-            } />
-            <Route path="/auth" element={<AuthLayout />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </ThemeProvider>
     </AuthProvider>

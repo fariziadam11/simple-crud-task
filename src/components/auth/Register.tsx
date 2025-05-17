@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { motion } from 'framer-motion';
@@ -12,6 +13,7 @@ interface RegisterProps {
 
 export const Register: React.FC<RegisterProps> = ({ onToggleForm }) => {
   const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -68,7 +70,9 @@ export const Register: React.FC<RegisterProps> = ({ onToggleForm }) => {
       if (error) {
         toast.error(error.message || 'Failed to sign up');
       } else {
-        toast.success('Registration successful! Please check your email to confirm your account.');
+        toast.success('Account created successfully!');
+        // Navigate to the main app after successful registration
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.message || 'An unexpected error occurred');
