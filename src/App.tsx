@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast, Toaster } from 'react-hot-toast';
-import { Plus, Moon, Sun, LayoutDashboard, Kanban, List } from 'lucide-react';
+import { Plus, Moon, Sun, LayoutDashboard, Kanban, List, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskFormData } from './types';
 import { fetchTasks, createTask, updateTask, deleteTask } from './services/taskService';
@@ -13,9 +13,13 @@ import { Modal } from './components/ui/Modal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { Button } from './components/ui/Button';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { UserProfile } from './components/auth/UserProfile';
 
 const AppContent = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { user, signOut } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,12 +34,14 @@ const AppContent = () => {
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   
-  // View mode state (list, board, dashboard)
-  const [viewMode, setViewMode] = useState<'list' | 'board' | 'dashboard'>('board');
+  // View mode state (list, board, dashboard, profile)
+  const [viewMode, setViewMode] = useState<'list' | 'board' | 'dashboard' | 'profile'>('board');
 
-  // Load tasks
+  // Load tasks when user changes
   useEffect(() => {
     const loadTasks = async () => {
+      if (!user) return; // Don't fetch tasks if not logged in
+      
       try {
         setIsLoading(true);
         const data = await fetchTasks();
@@ -50,38 +56,37 @@ const AppContent = () => {
     };
 
     loadTasks();
-  }, []);
+  }, [user]); // Re-fetch when user changes
 
   // Filter tasks
   useEffect(() => {
     let result = [...tasks];
-    
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (task) =>
           task.title.toLowerCase().includes(query) ||
-          task.description.toLowerCase().includes(query) ||
-          (task.tags && task.tags.some(tag => tag.toLowerCase().includes(query)))
+          (task.description && task.description.toLowerCase().includes(query))
       );
     }
-    
+
     // Apply status filter
-    if (statusFilter && statusFilter !== 'all') {
+    if (statusFilter !== 'all') {
       result = result.filter((task) => task.status === statusFilter);
     }
-    
+
     // Apply priority filter
-    if (priorityFilter && priorityFilter !== 'all') {
+    if (priorityFilter !== 'all') {
       result = result.filter((task) => task.priority === priorityFilter);
     }
-    
+
     // Apply category filter
-    if (categoryFilter && categoryFilter !== 'all') {
+    if (categoryFilter !== 'all') {
       result = result.filter((task) => task.category === categoryFilter);
     }
-    
+
     setFilteredTasks(result);
   }, [tasks, searchQuery, statusFilter, priorityFilter, categoryFilter]);
 
@@ -89,7 +94,7 @@ const AppContent = () => {
     try {
       setIsSubmitting(true);
       const newTask = await createTask(data);
-      setTasks((prev) => [newTask, ...prev]);
+      setTasks((prev) => [...prev, newTask]);
       setIsTaskModalOpen(false);
       toast.success('Task created successfully');
     } catch (error) {
@@ -100,9 +105,19 @@ const AppContent = () => {
     }
   };
 
+  const handleEditTask = (task: Task) => {
+    setCurrentTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleDeleteConfirmation = (taskId: string) => {
+    setTaskToDelete(taskId);
+    setIsDeleteModalOpen(true);
+  };
+
   const handleUpdateTask = async (data: TaskFormData) => {
     if (!currentTask) return;
-    
+
     try {
       setIsSubmitting(true);
       const updatedTask = await updateTask(currentTask.id, data);
@@ -121,7 +136,7 @@ const AppContent = () => {
 
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
-    
+
     try {
       setIsSubmitting(true);
       await deleteTask(taskToDelete);
@@ -139,7 +154,10 @@ const AppContent = () => {
 
   const handleStatusChange = async (taskId: string, status: 'pending' | 'in_progress' | 'completed') => {
     try {
-      const updatedTask = await updateTask(taskId, { status });
+      const taskToUpdate = tasks.find(task => task.id === taskId);
+      if (!taskToUpdate) return;
+      
+      const updatedTask = await updateTask(taskId, { ...taskToUpdate, status });
       setTasks((prev) =>
         prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
       );
@@ -155,22 +173,12 @@ const AppContent = () => {
     setIsTaskModalOpen(true);
   };
 
-  const openEditModal = (task: Task) => {
-    setCurrentTask(task);
-    setIsTaskModalOpen(true);
-  };
-
-  const openDeleteModal = (taskId: string) => {
-    setTaskToDelete(taskId);
-    setIsDeleteModalOpen(true);
-  };
-
   // Handle task reordering from the board view
   const handleTasksReordered = async (reorderedTasks: Task[]) => {
     try {
       // Update the local state first for immediate UI response
       setTasks(reorderedTasks);
-      
+
       // For each task that had its status changed, call the API
       for (const task of reorderedTasks) {
         const originalTask = tasks.find(t => t.id === task.id);
@@ -215,63 +223,63 @@ const AppContent = () => {
             >
               Task Manager
             </motion.h1>
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:space-x-2">
+            <div className="flex items-center space-x-2">
               {/* View Mode Toggles */}
-              <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-gray-700 sm:mr-4">
+              <div className="hidden sm:flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg mr-4">
                 <button
-                  onClick={() => setViewMode('dashboard')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'dashboard' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                  title="Dashboard View"
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  title="List View"
                 >
-                  <LayoutDashboard size={20} />
+                  <List size={20} />
                 </button>
                 <button
                   onClick={() => setViewMode('board')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'board' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                  className={`p-2 rounded-md ${viewMode === 'board' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                   title="Board View"
                 >
                   <Kanban size={20} />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'list' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                  title="List View"
+                  onClick={() => setViewMode('dashboard')}
+                  className={`p-2 rounded-md ${viewMode === 'dashboard' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  title="Dashboard View"
                 >
-                  <List size={20} />
+                  <LayoutDashboard size={20} />
+                </button>
+                <button
+                  onClick={() => setViewMode('profile')}
+                  className={`p-2 rounded-md ${viewMode === 'profile' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  title="User Profile"
+                >
+                  <User size={20} />
                 </button>
               </div>
               
               {/* Dark Mode Toggle */}
               <button
-                  onClick={toggleDarkMode}
-                  className="
-                    p-2 
-                    sm:p-2 
-                    md:p-3 
-                    rounded-full 
-                    bg-gray-100 
-                    dark:bg-gray-700 
-                    text-gray-700 
-                    dark:text-yellow-300 
-                    hover:bg-gray-200 
-                    dark:hover:bg-gray-600 
-                    transition-colors 
-                    fixed bottom-4 right-4 
-                    sm:bottom-6 sm:right-6 
-                    z-50
-                  "
-                  title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                >
-                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                onClick={toggleDarkMode}
+                className="
+                  p-2 
+                  sm:p-2 
+                  md:p-3 
+                  rounded-full 
+                  bg-gray-100 
+                  dark:bg-gray-700 
+                  text-gray-700 
+                  dark:text-yellow-300 
+                  hover:bg-gray-200 
+                  dark:hover:bg-gray-600 
+                  transition-colors 
+                  fixed bottom-4 right-4 
+                  sm:bottom-6 sm:right-6 
+                  z-50
+                "
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
 
-              
               <Button onClick={openCreateModal}>
                 <Plus size={18} className="mr-1" />
                 Add Task
@@ -282,27 +290,34 @@ const AppContent = () => {
       </header>
       
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <TaskFilter
-          onSearchChange={setSearchQuery}
-          onStatusChange={setStatusFilter}
-          onPriorityChange={setPriorityFilter}
-          onCategoryChange={setCategoryFilter}
-          categories={categories}
-        />
+        {viewMode !== 'profile' && (
+          <TaskFilter
+            onSearchChange={setSearchQuery}
+            onStatusChange={setStatusFilter}
+            onPriorityChange={setPriorityFilter}
+            onCategoryChange={setCategoryFilter}
+            categories={categories}
+          />
+        )}
         
         <AnimatePresence mode="wait">
-          {viewMode === 'dashboard' && (
+          {viewMode === 'list' && (
             <motion.div
-              key="dashboard"
+              key="list"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <Dashboard tasks={tasks} />
+              <TaskList 
+                tasks={filteredTasks} 
+                isLoading={isLoading}
+                onEdit={handleEditTask} 
+                onDelete={handleDeleteConfirmation} 
+                onStatusChange={handleStatusChange}
+              />
             </motion.div>
           )}
-          
           {viewMode === 'board' && (
             <motion.div
               key="board"
@@ -314,29 +329,33 @@ const AppContent = () => {
               <TaskBoard
                 tasks={filteredTasks}
                 isLoading={isLoading}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteConfirmation}
                 onStatusChange={handleStatusChange}
                 onTasksReordered={handleTasksReordered}
               />
             </motion.div>
           )}
-          
-          {viewMode === 'list' && (
+          {viewMode === 'dashboard' && (
             <motion.div
-              key="list"
+              key="dashboard"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <TaskList
-                tasks={filteredTasks}
-                isLoading={isLoading}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
-                onStatusChange={handleStatusChange}
-              />
+              <Dashboard tasks={tasks} />
+            </motion.div>
+          )}
+          {viewMode === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <UserProfile />
             </motion.div>
           )}
         </AnimatePresence>
@@ -374,13 +393,17 @@ const AppContent = () => {
       </Modal>
     </div>
   );
-}
+};
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

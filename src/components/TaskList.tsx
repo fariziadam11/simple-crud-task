@@ -30,9 +30,9 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-        <p className="text-gray-500">
+      <div className="bg-white rounded-lg shadow-md p-8 text-center dark:bg-gray-800">
+        <h3 className="text-lg font-medium text-gray-900 mb-2 dark:text-white">No tasks found</h3>
+        <p className="text-gray-500 dark:text-gray-400">
           Create a new task or adjust your search filters.
         </p>
       </div>
