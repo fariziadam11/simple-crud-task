@@ -175,8 +175,8 @@ export const UserProfile: React.FC = () => {
           />
         </div>
 
-        <div className="flex justify-between mt-6">
-          <Button type="submit" isLoading={updating} className="w-auto">
+        <div className="flex justify-between mt-6 sm:justify-end gap-2">
+          <Button type="submit" isLoading={updating} className="w-auto sm:w-auto md:w-auto lg:w-auto xl:w-auto 2xl:w-auto">
             <Settings size={16} className="mr-2" />
             Update Profile
           </Button>
