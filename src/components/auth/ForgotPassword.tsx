@@ -31,25 +31,23 @@ export const ForgotPassword: React.FC<{ onBackToLogin: () => void }> = ({ onBack
     try {
       const { error } = await resetPassword(email);
       
-      // Store the email in sessionStorage for potential use in the reset password page
-      sessionStorage.setItem('resetEmail', email);
-      
-      // Note: We don't navigate here because Supabase will send an email with a magic link
-      // The user will click that link which will take them to the reset-password route
       if (error) {
         toast.error(error.message || 'Failed to send password reset email');
         setError(error.message || 'Failed to send password reset email');
       } else {
-        setIsSubmitted(true);
+        // Tampilkan pesan sukses dan atur state
         toast.success('Password reset email sent successfully');
+        setIsSubmitted(true);
       }
     } catch (error) {
-      console.error(error);
+      console.error('Unexpected error:', error);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <motion.div
