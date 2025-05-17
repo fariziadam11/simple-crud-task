@@ -93,6 +93,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     setLoading(true);
     // Pastikan URL redirect lengkap dan benar
+    // Gunakan window.location.origin untuk mendapatkan domain yang sedang digunakan
+    // Ini akan bekerja baik di localhost maupun di domain Vercel
     const redirectUrl = `${window.location.origin}/reset-password`;
     console.log('Reset password redirect URL:', redirectUrl);
     
