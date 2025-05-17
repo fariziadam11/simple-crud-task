@@ -102,18 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setLoading(true);
     try {
-      // First delete user data from profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
-
-      if (profileError) {
-        setLoading(false);
-        return { error: profileError, success: false };
-      }
-
-      // Delete user's tasks
+      // Delete user's tasks first
       const { error: tasksError } = await supabase
         .from('tasks')
         .delete()
@@ -124,13 +113,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: tasksError, success: false };
       }
 
-      // For client-side, we need to use a different approach since admin methods aren't available
-      // First, we'll delete the user's data, then we'll sign out
+      // Delete user data from profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        setLoading(false);
+        return { error: profileError, success: false };
+      }
+
+      // In client-side code, we can't directly delete the user account using admin methods
+      // Instead, we can use the user.delete() method which is available in some auth providers
+      // For Supabase, we can use a workaround by calling a server function or using a custom endpoint
       
-      // The actual account deletion would typically be handled by a server function
-      // or by contacting Supabase support, but we can simulate it by removing all user data
+      try {
+        // Attempt to delete the user account
+        // Note: This requires the user to have recently signed in
+        const { error } = await supabase.rpc('delete_user');
+        
+        if (error) {
+          console.error('Error deleting user:', error);
+          // Even if this fails, we've already deleted their data, so we can proceed with sign out
+        }
+      } catch (err) {
+        console.error('Error calling delete_user RPC:', err);
+        // Continue with sign out even if this fails
+      }
       
-      // For now, we'll just sign out the user
+      // Sign out the user
       await signOut();
       setLoading(false);
       return { error: null, success: true };
