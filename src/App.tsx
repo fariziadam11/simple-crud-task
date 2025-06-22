@@ -18,6 +18,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthLayout } from './components/auth/AuthLayout';
 import { ResetPassword } from './components/auth/ResetPassword';
 import { UserProfile } from './components/auth/UserProfile';
+import { suppressDefaultPropsWarning } from './lib/suppressWarnings';
 
 const AppContent = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -41,6 +42,12 @@ const AppContent = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  
+  // Suppress react-beautiful-dnd defaultProps warning
+  useEffect(() => {
+    const restoreConsole = suppressDefaultPropsWarning();
+    return restoreConsole;
+  }, []);
   
   // Close mobile menu when view mode changes
   useEffect(() => {
